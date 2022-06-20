@@ -37,5 +37,5 @@ if __name__ == '__main__':
     num_epochs = [5, 25, 50, 250, 500, 1000]
     remaining = [num_epochs[0]] + [num_epochs[i] - num_epochs[i-1] for i in range(1, len(num_epochs))]
     for i, epochs in enumerate(num_epochs):
-        model.fit_partial(interactions, item_features=item_features, verbose=True, epochs=remaining[i], num_threads=8, word2vec_embeddings=word2vec_embeddings.values)
+        model.fit_partial(interactions, item_features=item_features, verbose=True, epochs=remaining[i], num_threads=8, word2vec_item_embeddings=word2vec_embeddings.values)
         pickle.dump(model, open(f'/pio/scratch/1/i313924/data/lightfm_data/model_{epochs}_word2vec_categories_item_alpha_0.pkl', 'wb'), protocol=4)

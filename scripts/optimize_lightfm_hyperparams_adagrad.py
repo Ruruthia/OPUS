@@ -38,7 +38,7 @@ def hyperopt_train_test(params):
 
 
     for _ in range(5):
-        model.fit_partial(train_interactions, epochs=200, num_threads=8, word2vec_embeddings=word2vec_embeddings.values)
+        model.fit_partial(train_interactions, epochs=200, num_threads=8, word2vec_embeddings=None)
         current_hit_rate = calculate_hit_rate(model, item_mapping, user_mapping, test_interactions, train_interactions)
         if current_hit_rate > best_hit_rate:
             best_hit_rate = current_hit_rate
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     space = {
         # for word2vec we need 240
-        "no_components": hp.choice("no_components", [240]),
+        "no_components": scope.int(hp.quniform("no_components", 100, 250, 10)),
         "learning_schedule": hp.choice("learning_schedule", ["adagrad"]),
         "learning_rate": hp.uniform("learning_rate", 0.005, 0.1),
         # item_alpha leads to model divergence sometimes, better not to use it
@@ -73,5 +73,5 @@ if __name__ == '__main__':
 
     trials = Trials()
     fmin(f, space, algo=tpe.suggest, max_evals=40, trials=trials)
-    with open('/pio/scratch/1/i313924/data/lightfm_data/hyperopt_trials_adagrad_word2vec.pickle', 'wb') as f_out:
+    with open('/pio/scratch/1/i313924/data/lightfm_data/hyperopt_trials_adagrad_alpha_0.pickle', 'wb') as f_out:
         pickle.dump(trials, f_out)
