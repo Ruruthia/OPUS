@@ -36,7 +36,7 @@ def hyperopt_train_test(params):
     model = LightFM(loss='warp', **params)
     best_hit_rate = 0.0
     for _ in range(5):
-        model.fit_partial(train_interactions, epochs=200, num_threads=8, word2vec_embeddings=None)
+        model.fit_partial(train_interactions, epochs=200, num_threads=8, word2vec_item_embeddings=None)
         current_hit_rate = calculate_hit_rate(model, item_mapping, user_mapping, test_interactions, train_interactions)
         if current_hit_rate > best_hit_rate:
             best_hit_rate = current_hit_rate
@@ -59,18 +59,18 @@ if __name__ == '__main__':
     user_mapping = {v: k for k, v in dataset.mapping()[0].items()}
 
     space = {
-        # for word2vec we need 240
-        "no_components": scope.int(hp.quniform("no_components", 100, 250, 10)),
+        "no_components": hp.choice("no_components", [250]),
+        # "no_components": scope.int(hp.quniform("no_components", 100, 250, 10)),
         "learning_schedule": hp.choice("learning_schedule", ["adadelta"]),
-        "rho": hp.uniform("rho", 0.7, 0.99),
+        "rho": hp.uniform("rho", 0.75, 0.99),
         "epsilon": hp.uniform("epsilon", 1e-8, 1e-4),
-        # item_alpha leads to model divergence sometimes, better not to use it
-        # "item_alpha": hp.uniform("item_alpha", 0.0, 1e-4),
+        # item_alpha leads to model divergence sometimes
+        "item_alpha": hp.uniform("item_alpha", 0.0, 1e-4),
         "user_alpha": hp.uniform("user_alpha", 0.0, 1e-4),
-        "max_sampled": scope.int(hp.quniform("max_samples", 5, 15, 1)),
+        # "max_sampled": scope.int(hp.quniform("max_samples", 5, 15, 1)),
     }
 
     trials = Trials()
-    fmin(f, space, algo=tpe.suggest, max_evals=40, trials=trials)
-    with open('/pio/scratch/1/i313924/data/lightfm_data/hyperopt_trials_adadelta_alpha_0.pickle', 'wb') as f_out:
+    fmin(f, space, algo=tpe.suggest, max_evals=50, trials=trials)
+    with open('/pio/scratch/1/i313924/data/lightfm_data/hyperopt_trials_adadelta_final.pickle', 'wb') as f_out:
         pickle.dump(trials, f_out)

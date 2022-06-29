@@ -6,6 +6,7 @@ import pandas as pd
 import scipy.sparse
 import scipy.sparse
 from lightfm import LightFM
+from sklearn import preprocessing
 
 if __name__ == '__main__':
 
@@ -30,20 +31,20 @@ if __name__ == '__main__':
     word2vec_user_embeddings = word2vec_user_embeddings.sort_index()
 
     # For pushing categories' clusters:
-    # items = df['asin'].drop_duplicates()
-    # items_categories = categories[categories.asin.isin(items)].drop_duplicates()
-    # without_category = set(items.values) - set(items_categories.asin)
-    #
-    # le = preprocessing.LabelEncoder()
-    # unique_categories = items_categories.category_1.unique()
-    # le.fit(unique_categories)
-    # items_categories.category_1 = le.transform(items_categories.category_1)
-    # for item in without_category:
-    #     items_categories.loc[item_mapping[item]] = pd.Series({'category_1': -1, 'asin': item})
-    #
-    # items_categories.index = items_categories.asin.map(lambda x: item_mapping[x])
-    # items_categories = items_categories.sort_index()
-    # item_category_mapping = items_categories.category_1
+    items = df['asin'].drop_duplicates()
+    items_categories = categories[categories.asin.isin(items)].drop_duplicates()
+    without_category = set(items.values) - set(items_categories.asin)
+
+    le = preprocessing.LabelEncoder()
+    unique_categories = items_categories.category_1.unique()
+    le.fit(unique_categories)
+    items_categories.category_1 = le.transform(items_categories.category_1)
+    for item in without_category:
+        items_categories.loc[item_mapping[item]] = pd.Series({'category_1': -1, 'asin': item})
+
+    items_categories.index = items_categories.asin.map(lambda x: item_mapping[x])
+    items_categories = items_categories.sort_index()
+    item_category_mapping = items_categories.category_1
 
     model = LightFM(
         no_components=240,
@@ -54,8 +55,8 @@ if __name__ == '__main__':
         item_alpha=5.97e-05,
         user_alpha=2.06e-6,
         max_sampled=9,
-        # num_categories=len(unique_categories),
-        # item_category_mapping=item_category_mapping
+        num_categories=len(unique_categories),
+        item_category_mapping=item_category_mapping
     )
 
     num_epochs = [5, 25, 50, 250, 500, 1000]
@@ -63,5 +64,6 @@ if __name__ == '__main__':
     for i, epochs in enumerate(num_epochs):
         model.fit_partial(interactions, verbose=True, epochs=remaining[i], num_threads=8,
                           word2vec_item_embeddings=word2vec_item_embeddings.values,
-                          word2vec_user_embeddings=word2vec_user_embeddings.values,)
-        pickle.dump(model, open(f'/pio/scratch/1/i313924/data/lightfm_data/model_{epochs}_epochs_word2vec_user_items_optimized.pkl', 'wb'), protocol=4)
+                          # word2vec_user_embeddings=word2vec_user_embeddings.values,
+                          )
+        pickle.dump(model, open(f'/pio/scratch/1/i313924/data/lightfm_data/model_{epochs}_epochs_word2vec_all_clusters_alpha_nonzero.pkl', 'wb'), protocol=4)
